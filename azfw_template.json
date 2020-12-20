@@ -1,0 +1,154 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "udr_name": {
+            "defaultValue": "udr-ronniepersonal",
+            "type": "String"
+        },
+        "azfw_name": {
+            "defaultValue": "azfw-ronniepersonal",
+            "type": "String"
+        },
+        "vnet_name": {
+            "defaultValue": "vnet-ronniepersonal",
+            "type": "String"
+        },
+        "pip_name": {
+            "defaultValue": "pip-ronniepersonal",
+            "type": "String"
+        },
+        "location": {
+            "type": "String",
+            "defaultValue": "[resourceGroup().location]"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2020-05-01",
+            "name": "[parameters('pip_name')]",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "Standard"
+            },
+            "properties": {
+                "publicIPAddressVersion": "IPv4",
+                "publicIPAllocationMethod": "Static",
+                "idleTimeoutInMinutes": 4,
+                "ipTags": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/routeTables",
+            "apiVersion": "2020-05-01",
+            "name": "[parameters('udr_name')]",
+            "location": "eastus",
+            "properties": {
+                "disableBgpRoutePropagation": false,
+                "routes": [
+                    {
+                        "name": "default",
+                        "properties": {
+                            "addressPrefix": "0.0.0.0/0",
+                            "nextHopType": "Internet"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2020-05-01",
+            "name": "[parameters('vnet_name')]",
+            "location": "eastus",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/routeTables', parameters('udr_name'))]"
+            ],
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.0.0.0/24"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "AzureFirewallSubnet",
+                        "properties": {
+                            "addressPrefix": "10.0.0.0/26",
+                            "routeTable": {
+                                "id": "[resourceId('Microsoft.Network/routeTables', parameters('udr_name'))]"
+                            },
+                            "serviceEndpoints": [],
+                            "delegations": [],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    }
+                ],
+                "virtualNetworkPeerings": [],
+                "enableDdosProtection": false,
+                "enableVmProtection": false
+            }
+        },
+        {
+            "type": "Microsoft.Network/azureFirewalls",
+            "apiVersion": "2020-05-01",
+            "name": "[parameters('azfw_name')]",
+            "location": "eastus",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses', parameters('pip_name'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnet_name'), 'AzureFirewallSubnet')]"
+            ],
+            "zones": [
+                "1",
+                "2",
+                "3"
+            ],
+            "properties": {
+                "sku": {
+                    "name": "AZFW_VNet",
+                    "tier": "Standard"
+                },
+                "threatIntelMode": "Alert",
+                "additionalProperties": {},
+                "ipConfigurations": [
+                    {
+                        "name": "pip-ronniepersonal",
+                        "properties": {
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('pip_name'))]"
+                            },
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnet_name'), 'AzureFirewallSubnet')]"
+                            }
+                        }
+                    }
+                ],
+                "networkRuleCollections": [],
+                "applicationRuleCollections": [],
+                "natRuleCollections": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks/subnets",
+            "apiVersion": "2020-05-01",
+            "name": "[concat(parameters('vnet_name'), '/AzureFirewallSubnet')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnet_name'))]",
+                "[resourceId('Microsoft.Network/routeTables', parameters('udr_name'))]"
+            ],
+            "properties": {
+                "addressPrefix": "10.0.0.0/26",
+                "routeTable": {
+                    "id": "[resourceId('Microsoft.Network/routeTables', parameters('udr_name'))]"
+                },
+                "serviceEndpoints": [],
+                "delegations": [],
+                "privateEndpointNetworkPolicies": "Enabled",
+                "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+        }
+    ]
+}
