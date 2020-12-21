@@ -8,8 +8,22 @@ $publicIpPrefix = New-AzPublicIpPrefix -Name $prefixName -ResourceGroupName $rgN
 #https://docs.microsoft.com/en-us/powershell/module/az.network/new-azpublicipaddress?view=azps-5.2.0&viewFallbackFrom=azps-2.0.0#example-4--create-a-new-public-ip-address-from-a-prefix
 
 $publicIpPrefix = Get-AzPublicIPPrefix -Name $prefixName -ResourceGroupName $rgName
-$publicIpName2 = "pip-ronniepersonal2"
-$publicIpName3 = "pip-ronniepersonal3"
-$location = "eastus"
-$publicIp2 = New-AzPublicIpAddress -Name $publicIpName2 -ResourceGroupName $rgName -AllocationMethod Static -Location $location -PublicIpPrefix $publicIpPrefix -Sku Standard 
-$publicIp3 = New-AzPublicIpAddress -Name $publicIpName3 -ResourceGroupName $rgName -AllocationMethod Static -Location $location -PublicIpPrefix $publicIpPrefix -Sku Standard
+$publicIpName = "pip-ronniepersonal"
+$location = (Get-AzResourceGroup -Name $rgName).Location
+$data = @{}
+for ($i = 2; $i -le 3; $i++) { 
+    $data["var$i"] = New-AzPublicIpAddress -Name "$publicIpName$i" -ResourceGroupName $rgName -AllocationMethod Static -Location $location -PublicIpPrefix $publicIpPrefix -Sku Standard 
+}
+
+Write-Host ($data.Values).Name
+
+# Add new PIPs for AZFW
+#https://docs.microsoft.com/en-us/azure/firewall/deploy-multi-public-ip-powershell
+$azfwName = "azfw-ronniepersonal"
+$azFw = Get-AzFirewall `
+  -Name $azfwName `
+  -ResourceGroupName $rgName
+
+$data.Values | ForEach-Object { $azFw.AddPublicIpAddress($_) }
+
+$azFw | Set-AzFirewall
