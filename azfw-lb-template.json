@@ -149,7 +149,6 @@
                 "name": "Standard"
             },
             "properties": {
-                "ipAddress": "x.x.176.61",
                 "publicIPAddressVersion": "IPv4",
                 "publicIPAllocationMethod": "Static",
                 "idleTimeoutInMinutes": 4,
@@ -165,7 +164,6 @@
                 "name": "Standard"
             },
             "properties": {
-                "ipAddress": "x.x.219.91",
                 "publicIPAddressVersion": "IPv4",
                 "publicIPAllocationMethod": "Static",
                 "idleTimeoutInMinutes": 4,
