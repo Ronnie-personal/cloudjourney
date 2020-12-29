@@ -61,7 +61,7 @@ https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-oauth-ropc
 https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-permissions-and-consent#openid-connect-scopes
 https://docs.microsoft.com/en-us/azure/databricks/dev-tools/api/latest/aad/app-aad-token#--username-password-flow-programmatic
 #>
-$tokenURI = "https://login.microsoftonline.com/toronto714yahoo.onmicrosoft.com/oauth2/v2.0/token"
+$tokenURI = "https://login.microsoftonline.com/$domainName/oauth2/v2.0/token"
 $tokenArguments = @{
     OutVariable = 'tokenStatus'
     Method = 'POST'
@@ -83,7 +83,7 @@ https://medium.com/objectsharp/how-to-get-azure-rest-apis-access-tokens-using-po
 #>
 
 # Call Azure Rest API to query IP Group
-$ipGroupURI = "https://management.azure.com/subscriptions/$secondSubId/resourceGroups/$rgName/providers/Microsoft.Network/ipGroups/$($ipGroupName)?api-version=2020-07-01"
+$ipGroupURI = "https://management.azure.com/subscriptions/$env:secondSubId/resourceGroups/$rgName/providers/Microsoft.Network/ipGroups/$($ipGroupName)?api-version=2020-07-01"
 $ipGroupArguments = @{
     OutVariable = 'response'
     Method = 'GET'
@@ -96,5 +96,3 @@ Invoke-WebRequest -uri $ipGroupURI @ipGroupArguments
 
 # cleanup
 Remove-AzIpGroup -ResourceGroupName $rgName -Name $ipGroupName -Force
-
-
